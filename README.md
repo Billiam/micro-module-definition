@@ -2,7 +2,12 @@
 
 MMD is a tiny (0.6kb / 0.4kb-gzipped) synchronous module definition and dependency management framework, built around a familiar define/require interface. While its API is modeled after AMD and CommonJS, MMD technically conforms to neither spec. Its intent is much smaller. Major frameworks such as [Require.js](http://requirejs.org/ "Require.js") and [curl.js](https://github.com/cujojs/curl "curl.js") are great for big projects, but can be overkill for tiny (< 5kb) web applications contained in a single script file. MMD is designed to provide module definition, lazy parsing, and dependency injection for those micro applications using a familiar API that adds little overhead weight.
 
-The `mmd` API has only two methods: `define` and `require`.
+The `mmd` API has five methods:
+ - `define`
+ - `require`
+ - `pushId`
+ - `getIds`
+ - `clearIds`
 
 ## define()
 
@@ -10,7 +15,7 @@ The `define` method creates a module definition.
 
 	mmd.define( "moduleId", [dependencies]?, factoryFunction );
 
-- `"moduleId"` : *Required*. Unique string identifier for this module.
+- `"moduleId"?` : *Optional, see pushId*. Unique string identifier for this module.
 - `[dependencies]?` : *Optional*. Array of dependency module ids to be required and injected into the module's scope.
 - `factoryFunction` : *Required*. Function used to build the module. This function should provide arguments mapped to the module's dependencies, and return the constructed module export.
 
@@ -30,7 +35,7 @@ The complete usage of `define` allows:
 	mmd.define("main", ["module1", "module2"], function( mod1, mod2 ) {
 		return {};
 	});
-	
+
 	// Require a module to load it...
 	mmd.require("main");
 	
@@ -110,6 +115,58 @@ The complete usage of `require` allows:
 	});
 
 Which came first, the chicken or the egg? MMD doesn't care to figure it out, so throws an exception when a circular reference is required. Avoid circular references; you should probably be rethinking your organization anyway if you encounter this problem.
+
+## pushId()
+
+`mmd` also uses a list of module ids (normally empty) which will be used when defining modules anonymously. The `pushId` method will add a new module id to this list, and it will be used for the next anonymous module definition. The id list is first-in-last-out, and expects ids to be defined in order.
+
+If no module ids have been predefined, an exception will be thrown when defining an anonymous module.
+
+Usage:
+
+    // 1) Predefine module names:
+    mmd.pushId('module1');
+    mmd.pushId('module2');
+
+    // 2) Define modules anonymously:
+    mmd.define(function() {
+    	return 'this is module 1';
+    });
+    mmd.define(function(){
+    	return 'this is module 2';
+    });
+
+    // 3) Require modules by name
+    mmd.require(['module1', 'module2'], function(module1, module2) {
+    	// ...
+    });
+
+If a global `mmd` array is defined before `mmd.js` is loaded, the array will be used as the module id list.
+
+    <script type="text/javascript">
+    	// define a list of module ids
+    	var mmd = [
+    		'module1',
+    		'module2',
+    		'module3'
+    	];
+    </script>
+    <script type="text/javascript" src="mmd.js"></script>
+    <script type="text/javascript">
+    	// define anonymous modules
+   		mmd.define(function(){
+   			return 'this is module 1';
+   		});
+
+   		//... etc
+    </script>
+## getIds()
+
+Lists defined but unused module ids, useful when debugging.
+
+## clearIds()
+
+Remove all predifined module ids from the internal list
 
 ## Go Global
 

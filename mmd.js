@@ -5,7 +5,8 @@
 var mmd = (function(config, modules, api) {
 	modules = {};
 
-	var idStack = (typeof config !== 'undefined' && typeof config !== function) ? config : [];
+	var idStack = Object.prototype.toString.call(config) == '[object Array]' ? config : [];
+(typeof config !== 'undefined' && ) ? config : [];
 
 	// Fetch the next ID in the series for use with anonymous definitions
 	function nextId() {
@@ -124,7 +125,7 @@ var mmd = (function(config, modules, api) {
 	};
 	
 	//Enable AMD style loading
-	api.define.amd = true;
+	api.define.amd = {};
 
 	return api;
 }(window.mmd));
