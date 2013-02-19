@@ -2,11 +2,17 @@
 //	A tiny module definition and dependency management framework.
 //	(c) 2012 Greg MacWilliam, Threespot.
 //	Freely distributed under the MIT license.
-
-var mmd = (function(modules, api) {
+var mmd = (function(config, modules, api) {
 	modules = {};
-	
-	return api = {
+
+	var idStack = (typeof config !== 'undefined' && typeof config !== function) ? config : [];
+
+	// Fetch the next ID in the series for use with anonymous definitions
+	function nextId() {
+		return idStack.shift();
+	};
+
+	var api = {
 		// Defines a new module.
 		// @param string-id
 		// @param array-dependencies?
@@ -21,16 +27,38 @@ var mmd = (function(modules, api) {
 				id = getParam('string'),
 				dependencies = getParam('object'),
 				factory = getParam('function');
-	
+				
+			if (!id) {
+				id = nextId();	
+			}
+
+
 			// Error if a name or factory were not provided.
 			if (!id || !factory) throw('invalid definition');
-	
+
 			// Set new module definition.
 			modules[ id ] = {
 				d: dependencies instanceof Array ? dependencies : [],
 				f: factory
 			};
 		},
+
+		// Add a new ID for use with anonymous defines
+		// @param string Module ID
+		pushId: function(id) {
+			idStack.push(id);
+		},
+
+		// Return ids remaining in the stack
+		getIds: function() {
+			return idStack;
+		},
+
+		//Clear the module name stack
+		clearIds: function() {
+			idStack = [];
+		},
+
 		// Requires a module. This fetches the module and all of its dependencies.
 		// @param string|array-moduleId
 		// @param function-callback
@@ -94,4 +122,9 @@ var mmd = (function(modules, api) {
 			return single ? req[0] : req;
 		}
 	};
-}());
+	
+	//Enable AMD style loading
+	api.define.amd = true;
+
+	return api;
+}(window.mmd));
