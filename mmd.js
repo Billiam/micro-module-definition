@@ -5,43 +5,84 @@
 var mmd = (function(config, modules, api) {
 	modules = {};
 
-	var idStack = Object.prototype.toString.call(config) == '[object Array]' ? config : [];
-(typeof config !== 'undefined' && ) ? config : [];
+	var LEADING_CHARACTERS = /^\.+\//;
+
+	var idStack = isArray(config) ? config : [];
 
 	// Fetch the next ID in the series for use with anonymous definitions
 	function nextId() {
 		return idStack.shift();
-	};
+	}
+
+	// Remove leading dots and slashes from
+	// module names
+	// @param string id
+	// @returns string
+	function formatId(id) {
+		return id.replace(LEADING_CHARACTERS, '');
+	}
+	
+    // Whether argument is an array
+    // @param {*}
+    // @returns boolean
+	function isArray(o) {
+		return Object.prototype.toString.call(o) === '[object Array]';
+	}
+    
+	// Find the position of an 'exports' string in an array
+    // @param Array arr
+    // @return number -1 if not found
+	function findExports(arr) {
+		if ( Array.prototype.indexOf) {
+			return arr.indexOf('exports');
+		}
+		for( var i= 0, l=arr.length; i<l; i++) {
+			if (arr[i] === 'exports') {
+				return i;
+			}
+		}
+		return -1;
+	}
 
 	var api = {
 		// Defines a new module.
 		// @param string-id
 		// @param array-dependencies?
 		// @param function-factory
-		define: function() {
-			var definition = arguments,
-				getParam = function( type, i ) {
-					for ( i = 0; i < definition.length; i++ ) {
-						if ( typeof(definition[i]) === type ) return definition[i];
-					}
-				},
-				id = getParam('string'),
-				dependencies = getParam('object'),
-				factory = getParam('function');
-				
-			if (!id) {
-				id = nextId();	
+		define: function(id, dependencies, factory) {
+			if (typeof id !== 'string') {
+				factory = dependencies;
+				dependencies = id;
+				id = null;
 			}
-
-
+			if ( ! isArray(dependencies)) {
+				factory = dependencies;
+				dependencies = [];
+			}
+			
+			if (!id) {
+				id = nextId();
+			}
+			
 			// Error if a name or factory were not provided.
 			if (!id || !factory) throw('invalid definition');
+			
+			id = formatId(id);
 
 			// Set new module definition.
 			modules[ id ] = {
-				d: dependencies instanceof Array ? dependencies : [],
+				d: isArray(dependencies) ? dependencies : [],
 				f: factory
 			};
+			
+			//remove 'exports' item and add to module data
+			if (isArray(dependencies)) {
+				var exportsIndex = findExports(dependencies);
+				if (exportsIndex !== -1) {
+					modules[ id ].d.splice(exportsIndex, 1);
+					modules[ id ].exp = exportsIndex;
+				}
+			}
 		},
 
 		// Add a new ID for use with anonymous defines
@@ -60,11 +101,17 @@ var mmd = (function(config, modules, api) {
 			idStack = [];
 		},
 
+		// Undefine a module
+		// @param string module id
+		undef : function(id) {
+			delete modules[id];
+		},
+		
 		// Requires a module. This fetches the module and all of its dependencies.
 		// @param string|array-moduleId
 		// @param function-callback
 		require: function( req, callback ) {
-			var single = !(req instanceof Array),
+			var single = !(isArray(req)),
 				self = this,
 				nil = null,
 				id,
@@ -75,14 +122,14 @@ var mmd = (function(config, modules, api) {
 			if (single) req = [ req ];
 		
 			for ( i = 0; i < req.length; i++ ) {
-				id = req[i];
+				id = formatId(req[i]);
 				
 				if (id === 'mmd') {
 					// MMD framework reference:
 					// Populate with self.
 					req[ i ] = api;
 					
-				} else if (self.hasOwnProperty.call( modules, id )) {
+				} else if (Object.prototype.hasOwnProperty.call( modules, id )) {
 					// Known module reference:
 					// Pull module definition from key table.
 					mod = modules[ id ];
@@ -98,7 +145,16 @@ var mmd = (function(config, modules, api) {
 						mod.p = 1;
 
 						// Run factory function with recursive require call to fetch dependencies.
-						mod.e = mod.f.apply(nil, self.require(mod.d));
+						var dependencies = self.require(mod.d);
+						var exportData;
+						                        
+						if (mod.exp !== undefined) {
+							exportData = {};
+							single = true;
+							dependencies.splice(mod.exp, 0, exportData);
+						}
+						var fnReturn = mod.f.apply(nil, dependencies);
+						mod.e = exportData ? exportData : fnReturn;
 
 						// Release module from the active path.
 						mod.p = 0;
