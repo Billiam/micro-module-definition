@@ -12,9 +12,11 @@ The `mmd` API has six methods:
 
 ## define()
 
-The `define` method creates a module definition.	
+The `define` method creates a module definition.
 
-	mmd.define( "moduleId", [dependencies]?, factoryFunction );
+```javascript
+mmd.define( "moduleId", [dependencies]?, factoryFunction );
+```
 
 - `"moduleId"?` : *Optional, see pushId*. Unique string identifier for this module.
 - `[dependencies]?` : *Optional*. Array of dependency module ids to be required and injected into the module's scope.
@@ -98,7 +100,9 @@ Modules may be defined in any order, however, all `define` calls should precede 
 
 The `require` method builds/accesses a module or collection of modules. Modules and their dependencies are built the first time they are required. Built modules are returned by the `require` method, *and* injected into an optional callback.
 
-	var module = mmd.require( ["moduleId"], callbackFunction? );
+```javascript
+var module = mmd.require( ["moduleId"], callbackFunction? );
+```
 
 - `["moduleId"]` : *Required*. The string identifier of a single module, *or* an array of module ids.
 - `callbackFunction?` : *Optional*. Callback function into which the required modules are injected. Provide mapped arguments.
@@ -106,7 +110,7 @@ The `require` method builds/accesses a module or collection of modules. Modules 
 
 The complete usage of `require` allows:
 
-```javascript```
+```javascript
 // 1) Return a single module by direct id reference.
 var module = mmd.require('module1');
 
