@@ -146,11 +146,10 @@ var mmd = (function(config, modules, api) {
 
 						// Run factory function with recursive require call to fetch dependencies.
 						var dependencies = self.require(mod.d);
-						var exportData;
+						var exportData = null;
 						                        
 						if (mod.exp !== undefined) {
 							exportData = {};
-							single = true;
 							dependencies.splice(mod.exp, 0, exportData);
 						}
 						var fnReturn = mod.f.apply(nil, dependencies);
