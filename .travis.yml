@@ -1,5 +1,3 @@
-rvm:
-  - 1.9.3
 script: phantomjs lib/test-runner.js test.html
 notifications:
   email: false
