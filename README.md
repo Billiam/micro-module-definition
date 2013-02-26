@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/Billiam/micro-module-definition.png?branch=master)](https://travis-ci.org/Billiam/micro-module-definition)
 
-MMD is a tiny (0.6kb / 0.4kb-gzipped) synchronous module definition and dependency management framework, built around a familiar define/require interface. While its API is modeled after AMD and CommonJS, MMD technically conforms to neither spec. Its intent is much smaller. Major frameworks such as [Require.js](http://requirejs.org/ "Require.js") and [curl.js](https://github.com/cujojs/curl "curl.js") are great for big projects, but can be overkill for tiny (< 5kb) web applications contained in a single script file. MMD is designed to provide module definition, lazy parsing, and dependency injection for those micro applications using a familiar API that adds little overhead weight.
+MMD is a tiny (1.1kb / 0.6kb-gzipped) synchronous module definition and dependency management framework, built around a familiar define/require interface. While its API is modeled after AMD and CommonJS, MMD technically conforms to neither spec. Its intent is much smaller. Major frameworks such as [Require.js](http://requirejs.org/ "Require.js") and [curl.js](https://github.com/cujojs/curl "curl.js") are great for big projects, but can be overkill for tiny (< 5kb) web applications contained in a single script file. MMD is designed to provide module definition, lazy parsing, and dependency injection for those micro applications using a familiar API that adds little overhead weight.
 
 The `mmd` API has six methods:
  - `define`
@@ -166,7 +166,7 @@ mmd.require(['module1', 'module2'], function(module1, module2) {
 
 If a global `mmd` array is defined before `mmd.js` is loaded, the array will be used as the module id list.
 
-```javascript
+```html
 <script type="text/javascript">
 	// define a list of module ids
 	var mmd = [
@@ -197,7 +197,7 @@ Remove all predifined module ids from the internal list
 ## undef()
 The `undef` method removes defined modules from `mmd`.
 
-```javascript
+```html
 <script type="text/javascript">
 	// define anonymous modules
 	mmd.define('module1', function(){ return 'module' } );
