@@ -22,16 +22,16 @@ var mmd = (function(config, modules, api) {
 		return id.replace(LEADING_CHARACTERS, '');
 	}
 	
-    // Whether argument is an array
-    // @param {*}
-    // @returns boolean
+	// Whether argument is an array
+	// @param {*}
+	// @returns boolean
 	function isArray(o) {
 		return Object.prototype.toString.call(o) === '[object Array]';
 	}
-    
+	
 	// Find the position of an 'exports' string in an array
-    // @param Array arr
-    // @return number -1 if not found
+	// @param Array arr
+	// @return number -1 if not found
 	function findExports(arr) {
 		if ( Array.prototype.indexOf) {
 			return arr.indexOf('exports');
@@ -147,12 +147,18 @@ var mmd = (function(config, modules, api) {
 						// Run factory function with recursive require call to fetch dependencies.
 						var dependencies = self.require(mod.d);
 						var exportData = null;
-						                        
+						var fnReturn;
+						
 						if (mod.exp !== undefined) {
 							exportData = {};
 							dependencies.splice(mod.exp, 0, exportData);
 						}
-						var fnReturn = mod.f.apply(nil, dependencies);
+						
+						if (typeof mod.f === 'function') {
+							fnReturn = mod.f.apply(nil, dependencies);
+						} else {
+							fnReturn = mod.f;
+						}
 						mod.e = exportData ? exportData : fnReturn;
 
 						// Release module from the active path.
