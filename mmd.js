@@ -143,24 +143,21 @@ var mmd = (function(config, modules, api) {
 
 						// Flag module as active within the path chain.
 						mod.p = 1;
-
-						// Run factory function with recursive require call to fetch dependencies.
-						var dependencies = self.require(mod.d);
-						var exportData = null;
-						var fnReturn;
-						
-						if (mod.exp !== undefined) {
-							exportData = {};
-							dependencies.splice(mod.exp, 0, exportData);
-						}
-						
-						if (typeof mod.f === 'function') {
-							fnReturn = mod.f.apply(nil, dependencies);
+						if (typeof mod.f !== 'function') {
+							mod.e = mod.f;
 						} else {
-							fnReturn = mod.f;
+							// Run factory function with recursive require call to fetch dependencies.
+							var dependencies = self.require(mod.d);
+							var exportData = undefined;
+							
+							if (mod.exp !== undefined) {
+								exportData = {};
+								dependencies.splice(mod.exp, 0, exportData);
+							}
+							
+							var fnReturn = mod.f.apply(nil, dependencies);
+							mod.e = exportData ? exportData : fnReturn;
 						}
-						mod.e = exportData ? exportData : fnReturn;
-
 						// Release module from the active path.
 						mod.p = 0;
 					}
