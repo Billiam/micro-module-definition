@@ -43,6 +43,42 @@ var mmd = (function(config, modules, api) {
 		}
 		return -1;
 	}
+	
+	function loadModule(mod) {
+		// Position of magic 'exports' dependency
+		var exportsIndex = -1;
+		
+		if (typeof mod.f !== 'function') {
+			mod.e = mod.f;
+		} else {
+			exportsIndex = findExports(mod.d);
+			if (exportsIndex !== -1) {
+				// Remove 'exports' dependency before requiring
+				mod.d.splice(exportsIndex, 1);
+				
+				// Module can be resolved to new export hash,
+				mod.e = {};
+				
+				// Disable circular dependency check
+				mod.p = 0;
+			}
+			
+			// Run factory function with recursive require call to fetch dependencies.
+			var dependencies = api.require(mod.d);
+			
+			// Re-add exports to dependencies array before passing to module factory
+			if (exportsIndex !== -1) {
+				dependencies.splice(exportsIndex, 0, mod.e);
+			}
+			
+			var fnReturn = mod.f.apply(null, dependencies);
+			mod.e = mod.e ? mod.e : fnReturn;
+		}
+		// Release module from the active path.
+		mod.p = 0;
+		
+		return mod;
+	}
 
 	var api = {
 		// Defines a new module.
@@ -74,15 +110,6 @@ var mmd = (function(config, modules, api) {
 				d: isArray(dependencies) ? dependencies : [],
 				f: factory
 			};
-			
-			//remove 'exports' item and add to module data
-			if (isArray(dependencies)) {
-				var exportsIndex = findExports(dependencies);
-				if (exportsIndex !== -1) {
-					modules[ id ].d.splice(exportsIndex, 1);
-					modules[ id ].exp = exportsIndex;
-				}
-			}
 		},
 
 		// Add a new ID for use with anonymous defines
@@ -113,7 +140,6 @@ var mmd = (function(config, modules, api) {
 		require: function( req, callback ) {
 			var single = !(isArray(req)),
 				self = this,
-				nil = null,
 				id,
 				mod,
 				i;
@@ -140,26 +166,8 @@ var mmd = (function(config, modules, api) {
 						// If module is active within the working dependency path chain,
 						// throw a circular reference error.
 						if (mod.p) throw('circular reference to ' + id);
-
-						// Flag module as active within the path chain.
-						mod.p = 1;
-						if (typeof mod.f !== 'function') {
-							mod.e = mod.f;
-						} else {
-							// Run factory function with recursive require call to fetch dependencies.
-							var dependencies = self.require(mod.d);
-							var exportData = undefined;
-							
-							if (mod.exp !== undefined) {
-								exportData = {};
-								dependencies.splice(mod.exp, 0, exportData);
-							}
-							
-							var fnReturn = mod.f.apply(nil, dependencies);
-							mod.e = exportData ? exportData : fnReturn;
-						}
-						// Release module from the active path.
-						mod.p = 0;
+						
+						mod = loadModule(mod);
 					}
 
 					// Replace dependency reference with the resolved module.
@@ -174,7 +182,7 @@ var mmd = (function(config, modules, api) {
 	
 			// If a callback function was provided,
 			// Inject dependency array into the callback.
-			if (callback && callback.apply) callback.apply(nil, req);
+			if (callback && callback.apply) callback.apply(null, req);
 		
 			// If directly referenced by ID, return module.
 			// otherwise, return array of all required modules.
