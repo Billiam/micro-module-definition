@@ -2,15 +2,15 @@
 
 [![Build Status](https://travis-ci.org/Billiam/micro-module-definition.png?branch=master)](https://travis-ci.org/Billiam/micro-module-definition)
 
-MMD is a tiny (1.1kb / 0.6kb-gzipped) synchronous module definition and dependency management framework, built around a familiar define/require interface. While its API is modeled after AMD and CommonJS, MMD technically conforms to neither spec. Its intent is much smaller. Major frameworks such as [Require.js](http://requirejs.org/ "Require.js") and [curl.js](https://github.com/cujojs/curl "curl.js") are great for big projects, but can be overkill for tiny (< 5kb) web applications contained in a single script file. MMD is designed to provide module definition, lazy parsing, and dependency injection for those micro applications using a familiar API that adds little overhead weight.
+MMD is a tiny (1.1kb / 0.66kb-gzipped) synchronous module definition and dependency management framework, built around a familiar define/require interface. While its API is modeled after AMD and CommonJS, MMD technically conforms to neither spec. Its intent is much smaller. Major frameworks such as [Require.js](http://requirejs.org/ "Require.js") and [curl.js](https://github.com/cujojs/curl "curl.js") are great for big projects, but can be overkill for tiny (< 5kb) web applications contained in a single script file. MMD is designed to provide module definition, lazy parsing, and dependency injection for those micro applications using a familiar API that adds little overhead weight.
 
 The `mmd` API has six methods:
- - `define`
- - `require`
- - `pushId`
- - `getIds`
- - `clearIds`
- - `undef`
+ - [`define`](#define)
+ - [`require`](#require)
+ - [`undef`](#undef)
+ - [`namespace.add`](#namespaceadd)
+ - [`namespace.list`](#namespacelist)
+ - [`namespace.clear`](#namespaceclear)
 
 ## define()
 
@@ -20,7 +20,7 @@ The `define` method creates a module definition.
 mmd.define( "moduleId", [dependencies]?, factoryFunction );
 ```
 
-- `"moduleId"?` : *Optional, see pushId*. Unique string identifier for this module.
+- `"moduleId"?` : *Optional, see namespace.add*. Unique string identifier for this module.
 - `[dependencies]?` : *Optional*. Array of dependency module ids to be required and injected into the module's scope.
 - `factoryFunction` : *Required*. Function used to build the module. This function should provide arguments mapped to the module's dependencies, and return the constructed module export.
 
@@ -137,18 +137,37 @@ var returned = mmd.require(['module1', 'module2'], function( mod1, mod2 ) {
 
 Which came first, the chicken or the egg? MMD doesn't care to figure it out, so throws an exception when a circular reference is required. Avoid circular references; you should probably be rethinking your organization anyway if you encounter this problem.
 
-## pushId()
+## undef()
+The `undef` method removes defined modules from `mmd`.
 
-`mmd` also uses a list of module ids (normally empty) which will be used when defining modules anonymously. The `pushId` method will add a new module id to this list, and it will be used for the next anonymous module definition. The id list is first-in-last-out, and expects ids to be defined in order.
+```html
+<script type="text/javascript">
+	// define anonymous modules
+	mmd.define('module1', function(){ return 'module' } );
+	
+	console.log( mmd.require('module1') );
+	// > 'module'
+	mmd.undef('module1');
+	mmd.require('module');
+	//> exception "module is undefined"
+	
+</script>
+```
 
-If no module ids have been predefined, an exception will be thrown when defining an anonymous module.
+## namespace.add()
+
+`mmd` also uses a list of module namespaces (normally empty) which will be used when defining modules anonymously. 
+The `namespace.add` method will add a new module namespace to this list, which will be used for the next anonymous module definition. 
+The namespace list is first-in-last-out, and expects namespaces to be defined in order of use.
+
+If no module namespaces have been predefined, an exception will be thrown when defining an anonymous module.
 
 Usage:
 
 ```javascript
 // 1) Predefine module names:
-mmd.pushId('module1');
-mmd.pushId('module2');
+mmd.namespace.add('module1');
+mmd.namespace.add('module2');
 
 // 2) Define modules anonymously:
 mmd.define(function() {
@@ -164,11 +183,11 @@ mmd.require(['module1', 'module2'], function(module1, module2) {
 });
 ```
 
-If a global `mmd` array is defined before `mmd.js` is loaded, the array will be used as the module id list.
+If a global `mmd` array is defined before `mmd.js` is loaded, the array will be used as the module namespace list.
 
 ```html
 <script type="text/javascript">
-	// define a list of module ids
+	// define a list of module namespaces
 	var mmd = [
 		'module1',
 		'module2',
@@ -186,30 +205,13 @@ If a global `mmd` array is defined before `mmd.js` is loaded, the array will be 
 </script>
 ```
 
-## getIds()
+## namespace.list()
 
-Lists defined but unused module ids, useful when debugging.
+Lists defined but unused module namespaces, useful when debugging.
 
-## clearIds()
+## namespace.clear()
 
-Remove all predifined module ids from the internal list
-
-## undef()
-The `undef` method removes defined modules from `mmd`.
-
-```html
-<script type="text/javascript">
-	// define anonymous modules
-	mmd.define('module1', function(){ return 'module' } );
-	
-	console.log( mmd.require('module1') );
-	// > 'module'
-	mmd.undef('module1');
-	mmd.require('module');
-	//> exception "module is undefined"
-	
-</script>
-```
+Remove all predefined module namespaces from the internal list
 
 ## Go Global
 

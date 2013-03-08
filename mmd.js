@@ -7,11 +7,11 @@ var mmd = (function(config, modules, api) {
 
 	var LEADING_CHARACTERS = /^\.+\//;
 
-	var idStack = isArray(config) ? config : [];
+	var namespaces = isArray(config) ? config : [];
 
-	// Fetch the next ID in the series for use with anonymous definitions
+	// Fetch the next namespace in the series for use with anonymous definitions
 	function nextId() {
-		return idStack.shift();
+		return namespaces.shift();
 	}
 
 	// Remove leading dots and slashes from
@@ -80,7 +80,7 @@ var mmd = (function(config, modules, api) {
 		return mod;
 	}
 
-	var api = {
+	api = {
 		// Defines a new module.
 		// @param string-id
 		// @param array-dependencies?
@@ -100,8 +100,13 @@ var mmd = (function(config, modules, api) {
 				id = nextId();
 			}
 			
-			// Error if a name or factory were not provided.
-			if (!id || !factory) throw('invalid definition');
+			// Error if module name is not provided
+			if (!id) {
+				throw('undefined namespace');
+			}
+			
+			// Error if factory is not defined
+			if (!factory) throw('invalid definition');
 			
 			id = formatId(id);
 
@@ -111,21 +116,21 @@ var mmd = (function(config, modules, api) {
 				f: factory
 			};
 		},
-
-		// Add a new ID for use with anonymous defines
-		// @param string Module ID
-		pushId: function(id) {
-			idStack.push(id);
-		},
-
-		// Return ids remaining in the stack
-		getIds: function() {
-			return idStack;
-		},
-
-		//Clear the module name stack
-		clearIds: function() {
-			idStack = [];
+		
+		namespace: {
+			add: function(namespace) {
+				namespaces.push(namespace);
+				
+				return this;
+			},
+			clear : function() {
+				namespaces = [];
+				
+				return this;
+			},
+			list: function() {
+				return namespaces;
+			}
 		},
 
 		// Undefine a module
